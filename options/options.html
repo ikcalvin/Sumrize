@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sumrize — Settings</title>
+  <link rel="stylesheet" href="options.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="url(#grad2)" opacity="0.15"/>
+          <path d="M9 9h6M9 12h6M9 15h4" stroke="url(#grad2)" stroke-width="1.8" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="grad2" x1="2" y1="2" x2="22" y2="22">
+              <stop stop-color="#a78bfa"/>
+              <stop offset="1" stop-color="#6366f1"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="logo-text">Sumrize</span>
+      </div>
+      <span class="subtitle">Settings</span>
+    </header>
+
+    <div class="card">
+      <div class="field">
+        <label for="groqKey" class="field-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Groq API Key
+        </label>
+        <p class="field-desc">Free at <a href="https://console.groq.com" target="_blank" rel="noopener">console.groq.com</a> — no credit card needed</p>
+        <div class="input-wrapper">
+          <input type="password" id="groqKey" class="input" placeholder="gsk_..." autocomplete="off" />
+          <button class="toggle-vis" data-target="groqKey" title="Toggle visibility">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label for="unrealSpeechKey" class="field-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Unreal Speech API Key
+        </label>
+        <p class="field-desc">Get your key at <a href="https://unrealspeech.com" target="_blank" rel="noopener">unrealspeech.com</a></p>
+        <div class="input-wrapper">
+          <input type="password" id="unrealSpeechKey" class="input" placeholder="Enter your Unreal Speech API key..." autocomplete="off" />
+          <button class="toggle-vis" data-target="unrealSpeechKey" title="Toggle visibility">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <button id="saveBtn" class="btn btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+        <polyline points="17 21 17 13 7 13 7 21"/>
+        <polyline points="7 3 7 8 15 8"/>
+      </svg>
+      Save Settings
+    </button>
+
+    <div id="successMsg" class="success-msg hidden">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Settings saved successfully!
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
