@@ -49,6 +49,42 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* ---- FAB ---- */
+.sumrize-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2147483647;
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: widgetSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sumrize-fab:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+}
+
+.sumrize-fab.hidden {
+  display: none !important;
+}
+
+.sumrize-fab svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
 /* ---- Header / drag bar ---- */
 .widget-header {
   display: flex;

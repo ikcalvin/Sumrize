@@ -7,8 +7,13 @@
   if (document.getElementById("sumrize-root")) {
     const existing = document.getElementById("sumrize-root");
     const widget = existing.shadowRoot.querySelector(".sumrize-widget");
-    if (widget) {
-      widget.classList.toggle("collapsed");
+    const fabBtn = existing.shadowRoot.querySelector(".sumrize-fab");
+    if (widget && fabBtn) {
+      if (widget.classList.contains("hidden")) {
+        fabBtn.click();
+      } else {
+        widget.classList.toggle("collapsed");
+      }
     }
     return;
   }
@@ -36,9 +41,16 @@
   styleLink.href = chrome.runtime.getURL("content/widget.css");
   shadow.appendChild(styleLink);
 
+  // ---- Build FAB HTML ----
+  const fab = document.createElement("button");
+  fab.className = "sumrize-fab";
+  fab.title = "Summarize & Play";
+  fab.innerHTML = `<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+  shadow.appendChild(fab);
+
   // ---- Build widget HTML ----
   const widget = document.createElement("div");
-  widget.className = "sumrize-widget";
+  widget.className = "sumrize-widget hidden";
   widget.innerHTML = `
     <!-- Header -->
     <div class="widget-header" id="dragHandle">
@@ -160,6 +172,7 @@
 
   // ---- DOM refs (inside shadow) ----
   const $ = (sel) => shadow.querySelector(sel);
+  const fabBtn = $(".sumrize-fab");
   const statusBar = $("#statusBar");
   const statusText = $("#statusText");
   const keyWarning = $("#keyWarning");
@@ -207,12 +220,14 @@
   );
   $("#closeBtn").addEventListener("click", () => {
     stopAllAudio();
-    host.remove();
+    widget.classList.add("hidden");
+    fabBtn.classList.remove("hidden");
   });
 
   summarizeBtn.addEventListener("click", handleSummarize);
   listenBtn.addEventListener("click", handleListen);
   playPauseBtn.addEventListener("click", togglePlayPause);
+  fabBtn.addEventListener("click", handleQuickPlay);
 
   speedSelect.addEventListener("change", () => {
     if (audioQueue.length > 0 && audioQueue[currentChunkIdx]) {
@@ -325,6 +340,16 @@
       document.querySelector('[class*="title"]')?.innerText?.trim() ||
       document.title;
     return { title, content: text.substring(0, 15000), url: location.href };
+  }
+
+  // ---- Quick Play ----
+  async function handleQuickPlay() {
+    fabBtn.classList.add("hidden");
+    widget.classList.remove("hidden");
+    await handleSummarize();
+    if (currentSummary && !streamAborted) {
+      await handleListen();
+    }
   }
 
   // ---- Summarize ----
