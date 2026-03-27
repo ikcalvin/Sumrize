@@ -89,44 +89,6 @@
         <span>API keys missing. <a id="openSettings">Set up keys →</a></span>
       </div>
 
-      <!-- Voice -->
-      <div class="control-row">
-        <span class="control-label">Voice</span>
-        <div class="select-wrap">
-          <select id="voiceSelect" class="voice-select">
-            <optgroup label="Female">
-              <option value="Autumn">Autumn</option>
-              <option value="Melody">Melody</option>
-              <option value="Hannah">Hannah</option>
-              <option value="Emily">Emily</option>
-              <option value="Ivy">Ivy</option>
-            </optgroup>
-            <optgroup label="Male">
-              <option value="Noah">Noah</option>
-              <option value="Jasper">Jasper</option>
-              <option value="Caleb">Caleb</option>
-              <option value="Ronan">Ronan</option>
-              <option value="Ethan">Ethan</option>
-              <option value="Daniel">Daniel</option>
-              <option value="Zane">Zane</option>
-            </optgroup>
-          </select>
-          <svg class="select-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-      </div>
-
-      <!-- Action buttons -->
-      <div class="btn-row">
-        <button class="btn btn-primary" id="summarizeBtn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          <span>Summarize</span>
-        </button>
-        <button class="btn btn-secondary" id="listenBtn" disabled>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          <span>Listen</span>
-        </button>
-      </div>
-
       <!-- Summary -->
       <div class="summary-box hidden" id="summaryBox">
         <div class="summary-title">
@@ -176,9 +138,7 @@
   const statusBar = $("#statusBar");
   const statusText = $("#statusText");
   const keyWarning = $("#keyWarning");
-  const voiceSelect = $("#voiceSelect");
-  const summarizeBtn = $("#summarizeBtn");
-  const listenBtn = $("#listenBtn");
+  const keyWarningText = $("#keyWarning span");
   const summaryBox = $("#summaryBox");
   const articleTitle = $("#articleTitle");
   const summaryText = $("#summaryText");
@@ -194,24 +154,30 @@
   const toastEl = $("#toast");
 
   // ---- Init ----
-  chrome.storage.sync.get(["selectedVoice"], (r) => {
-    if (r.selectedVoice) voiceSelect.value = r.selectedVoice;
-  });
-
   sendBg({ action: "checkKeys" }, (r) => {
-    if (r && (!r.hasGroq || !r.hasTts))
-      keyWarning.classList.remove("hidden");
+    if (r) {
+      if (!r.hasGroq && !r.hasTts) {
+        keyWarningText.innerHTML = `API keys missing. <a id="openSettings">Set up keys →</a>`;
+        keyWarning.classList.remove("hidden");
+      } else if (!r.hasGroq) {
+        keyWarningText.innerHTML = `AI Provider key missing. <a id="openSettings">Set up key →</a>`;
+        keyWarning.classList.remove("hidden");
+      } else if (!r.hasTts) {
+        keyWarningText.innerHTML = `TTS Audio key missing. <a id="openSettings">Set up key →</a>`;
+        keyWarning.classList.remove("hidden");
+      }
+      
+      // Re-attach event listeners for dynamically added links
+      const link = $("#openSettings");
+      if (link) {
+        link.addEventListener("click", () => sendBg({ action: "openOptions" }));
+      }
+    }
   });
 
   // ---- Events ----
-  voiceSelect.addEventListener("change", () => {
-    chrome.storage.sync.set({ selectedVoice: voiceSelect.value });
-  });
 
   $("#settingsBtn").addEventListener("click", () =>
-    sendBg({ action: "openOptions" }),
-  );
-  $("#openSettings").addEventListener("click", () =>
     sendBg({ action: "openOptions" }),
   );
 
@@ -224,8 +190,6 @@
     fabBtn.classList.remove("hidden");
   });
 
-  summarizeBtn.addEventListener("click", handleSummarize);
-  listenBtn.addEventListener("click", handleListen);
   playPauseBtn.addEventListener("click", togglePlayPause);
   fabBtn.addEventListener("click", handleQuickPlay);
 
@@ -355,8 +319,6 @@
   // ---- Summarize ----
   async function handleSummarize() {
     showStatus("Extracting article...");
-    setLoading(summarizeBtn, true);
-    listenBtn.disabled = true;
 
     try {
       const result = extractArticle();
@@ -378,13 +340,10 @@
       articleTitle.textContent = currentTitle;
       summaryText.textContent = currentSummary;
       summaryBox.classList.remove("hidden");
-      listenBtn.disabled = false;
       hideStatus();
     } catch (err) {
       showStatus(err.message, true);
       setTimeout(hideStatus, 5000);
-    } finally {
-      setLoading(summarizeBtn, false);
     }
   }
 
@@ -401,10 +360,8 @@
     streamAborted = false;
 
     showStatus("Preparing audio...");
-    setLoading(listenBtn, true);
 
     try {
-      const voice = voiceSelect.value;
       const { chunks, error: cErr } = await sendBgAsync({
         action: "ttsChunks",
         text: currentSummary,
@@ -425,8 +382,7 @@
         if (streamAborted) return;
         const resp = await sendBgAsync({
           action: "ttsOne",
-          text: chunks[i],
-          voice,
+          text: chunks[i]
         });
         if (resp.error) throw new Error(resp.error);
 
@@ -453,7 +409,6 @@
         // Start playback as soon as first chunk is ready
         if (i === 0 && !isPlaying && !streamAborted) {
           playChunk(0);
-          setLoading(listenBtn, false);
         }
       };
 
@@ -469,9 +424,9 @@
         await fetchChunk(i);
       }
     } catch (err) {
+      playerBox.classList.add("hidden");
       showStatus(err.message, true);
       setTimeout(hideStatus, 5000);
-      setLoading(listenBtn, false);
     }
   }
 

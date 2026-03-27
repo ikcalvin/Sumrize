@@ -1,9 +1,40 @@
 // Sumrize — Background Service Worker
 // Orchestrates Groq summarization, Unreal Speech TTS, and widget injection
 
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const UNREAL_SPEECH_URL = "https://api.v8.unrealspeech.com/stream";
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+
+const PROVIDERS = {
+  groq: {
+    url: "https://api.groq.com/openai/v1/chat/completions",
+    format: "openai",
+    defaultModel: "llama-3.3-70b-versatile"
+  },
+  openai: {
+    url: "https://api.openai.com/v1/chat/completions",
+    format: "openai",
+    defaultModel: "gpt-4o-mini"
+  },
+  deepseek: {
+    url: "https://api.deepseek.com/chat/completions",
+    format: "openai",
+    defaultModel: "deepseek-chat"
+  },
+  openrouter: {
+    url: "https://openrouter.ai/api/v1/chat/completions",
+    format: "openai",
+    defaultModel: "openai/gpt-4o-mini"
+  },
+  anthropic: {
+    url: "https://api.anthropic.com/v1/messages",
+    format: "anthropic",
+    defaultModel: "claude-3-5-haiku-latest"
+  },
+  gemini: {
+    url: "https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent",
+    format: "gemini",
+    defaultModel: "gemini-1.5-flash"
+  }
+};
 
 // ---- Extension icon click → inject floating widget ----
 chrome.action.onClicked.addListener(async (tab) => {
@@ -21,23 +52,31 @@ chrome.action.onClicked.addListener(async (tab) => {
 async function getApiKeys() {
   return new Promise((resolve) => {
     chrome.storage.sync.get(
-      ["unrealSpeechApiKey", "groqApiKey"],
+      ["llmProvider", "llmApiKey", "llmModel", "unrealSpeechApiKey", "selectedVoice", "groqApiKey"],
       (result) => {
         resolve({
+          llmProvider: result.llmProvider || "groq",
+          llmApiKey: result.llmApiKey || result.groqApiKey || "",
+          llmModel: result.llmModel || "",
           unrealSpeech: result.unrealSpeechApiKey || "",
-          groq: result.groqApiKey || "",
+          selectedVoice: result.selectedVoice || "Autumn"
         });
       },
     );
   });
 }
 
-// ---- Groq Summarization ----
+// ---- Summarization ----
 async function summarizeArticle(title, content) {
   const keys = await getApiKeys();
-  if (!keys.groq) {
-    throw new Error("Groq API key not set. Go to extension options to add it.");
+  if (!keys.llmApiKey) {
+    throw new Error("AI provider API key not set. Go to extension options to add it.");
   }
+
+  const pInfo = PROVIDERS[keys.llmProvider];
+  if (!pInfo) throw new Error("Unknown provider: " + keys.llmProvider);
+  
+  const model = keys.llmModel || pInfo.defaultModel;
 
   const systemPrompt = `You are an expert article summarizer. Provide a clear, concise summary of the given article.
 The summary should:
@@ -49,30 +88,72 @@ The summary should:
 
   const userPrompt = `Article Title: ${title}\n\nArticle Content:\n${content}`;
 
-  const response = await fetch(GROQ_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${keys.groq}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: GROQ_MODEL,
+  let requestUrl = pInfo.url;
+  let requestHeaders = {
+    "Content-Type": "application/json"
+  };
+  let requestBody = {};
+  let extractText = (data) => "";
+
+  if (pInfo.format === "openai") {
+    requestHeaders["Authorization"] = `Bearer ${keys.llmApiKey}`;
+    if (keys.llmProvider === "openrouter") {
+      requestHeaders["HTTP-Referer"] = "https://sumrize.com"; 
+      requestHeaders["X-Title"] = "Sumrize";
+    }
+    requestBody = {
+      model: model,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: userPrompt }
       ],
       temperature: 0.5,
-      max_tokens: 1024,
-    }),
+      max_tokens: 1024
+    };
+    extractText = (data) => data.choices[0].message.content;
+  } else if (pInfo.format === "anthropic") {
+    requestHeaders["x-api-key"] = keys.llmApiKey;
+    requestHeaders["anthropic-version"] = "2023-06-01";
+    requestHeaders["anthropic-cors-bypass"] = "true";
+    requestBody = {
+      model: model,
+      system: systemPrompt,
+      messages: [
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.5,
+      max_tokens: 1024
+    };
+    extractText = (data) => data.content[0].text;
+  } else if (pInfo.format === "gemini") {
+    requestUrl = pInfo.url.replace("{MODEL}", model) + `?key=${keys.llmApiKey}`;
+    requestBody = {
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      generationConfig: {
+        temperature: 0.5,
+        maxOutputTokens: 1024
+      }
+    };
+    extractText = (data) => data.candidates[0].content.parts[0].text;
+  }
+
+  const response = await fetch(requestUrl, {
+    method: "POST",
+    headers: requestHeaders,
+    body: JSON.stringify(requestBody)
   });
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || `Groq API error: ${response.status}`);
+    const errText = await response.text();
+    let err = {};
+    try { err = JSON.parse(errText); } catch(e) {}
+    const msg = err.error?.message || errText;
+    throw new Error(`API error (${keys.llmProvider}): ${response.status} - ${msg}`);
   }
 
   const data = await response.json();
-  return data.choices[0].message.content;
+  return extractText(data);
 }
 
 // ---- Text Chunking (Unreal Speech 1000-char limit for /stream) ----
@@ -117,7 +198,7 @@ async function ttsOneChunk(text, voiceId) {
     );
   }
 
-  const voice = voiceId || "Autumn";
+  const voice = voiceId || keys.selectedVoice || "Autumn";
 
   const response = await fetch(UNREAL_SPEECH_URL, {
     method: "POST",
@@ -182,7 +263,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     getApiKeys()
       .then((keys) =>
         sendResponse({
-          hasGroq: !!keys.groq,
+          hasGroq: !!keys.llmApiKey,
           hasTts: !!keys.unrealSpeech,
         }),
       )

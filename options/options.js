@@ -1,18 +1,47 @@
 // Sumrize — Options Page Logic
 
 document.addEventListener("DOMContentLoaded", () => {
-  const groqInput = document.getElementById("groqKey");
+  const llmProvider = document.getElementById("llmProvider");
+  const llmKey = document.getElementById("llmKey");
+  const llmModel = document.getElementById("llmModel");
+  const llmKeyDesc = document.getElementById("llmKeyDesc");
   const unrealSpeechInput = document.getElementById("unrealSpeechKey");
+  const voiceSelect = document.getElementById("voiceSelect");
   const saveBtn = document.getElementById("saveBtn");
   const successMsg = document.getElementById("successMsg");
 
+  const providerDefaults = {
+    groq: { desc: "Free at console.groq.com", model: "llama-3.3-70b-versatile" },
+    openai: { desc: "Get your key at platform.openai.com", model: "gpt-4o-mini" },
+    anthropic: { desc: "Get your key at console.anthropic.com", model: "claude-3-5-haiku-latest" },
+    deepseek: { desc: "Get your key at platform.deepseek.com", model: "deepseek-chat" },
+    gemini: { desc: "Get your key at aistudio.google.com", model: "gemini-1.5-flash" },
+    openrouter: { desc: "Get your key at openrouter.ai", model: "openai/gpt-4o-mini" }
+  };
+
+  function updatePlaceholders() {
+    const provider = llmProvider.value;
+    const defs = providerDefaults[provider];
+    if (defs) {
+      llmKeyDesc.textContent = defs.desc;
+      llmModel.placeholder = `e.g. ${defs.model}`;
+      if (!llmModel.value) llmModel.value = defs.model;
+    }
+  }
+
+  llmProvider.addEventListener("change", updatePlaceholders);
+
   // Load saved keys
   chrome.storage.sync.get(
-    ["groqApiKey", "unrealSpeechApiKey"],
+    ["llmProvider", "llmApiKey", "llmModel", "unrealSpeechApiKey", "selectedVoice"],
     (result) => {
-      if (result.groqApiKey) groqInput.value = result.groqApiKey;
-      if (result.unrealSpeechApiKey)
-        unrealSpeechInput.value = result.unrealSpeechApiKey;
+      if (result.llmProvider) llmProvider.value = result.llmProvider;
+      if (result.llmApiKey) llmKey.value = result.llmApiKey;
+      if (result.llmModel) llmModel.value = result.llmModel;
+      if (result.unrealSpeechApiKey) unrealSpeechInput.value = result.unrealSpeechApiKey;
+      if (result.selectedVoice) voiceSelect.value = result.selectedVoice;
+      
+      updatePlaceholders();
     },
   );
 
@@ -26,13 +55,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Save
   saveBtn.addEventListener("click", () => {
-    const groqKey = groqInput.value.trim();
-    const unrealSpeechKey = unrealSpeechInput.value.trim();
-
     chrome.storage.sync.set(
       {
-        groqApiKey: groqKey,
-        unrealSpeechApiKey: unrealSpeechKey,
+        llmProvider: llmProvider.value,
+        llmApiKey: llmKey.value.trim(),
+        llmModel: llmModel.value.trim(),
+        unrealSpeechApiKey: unrealSpeechInput.value.trim(),
+        selectedVoice: voiceSelect.value
       },
       () => {
         successMsg.classList.remove("hidden");
