@@ -156,14 +156,14 @@
   // ---- Init ----
   sendBg({ action: "checkKeys" }, (r) => {
     if (r) {
-      if (!r.hasGroq && !r.hasTts) {
+      if (!r.hasGroq && !r.hasDeepgram) {
         keyWarningText.innerHTML = `API keys missing. <a id="openSettings">Set up keys →</a>`;
         keyWarning.classList.remove("hidden");
       } else if (!r.hasGroq) {
         keyWarningText.innerHTML = `AI Provider key missing. <a id="openSettings">Set up key →</a>`;
         keyWarning.classList.remove("hidden");
-      } else if (!r.hasTts) {
-        keyWarningText.innerHTML = `TTS Audio key missing. <a id="openSettings">Set up key →</a>`;
+      } else if (!r.hasDeepgram) {
+        keyWarningText.innerHTML = `Deepgram API key missing. <a id="openSettings">Set up key →</a>`;
         keyWarning.classList.remove("hidden");
       }
       

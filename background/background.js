@@ -1,7 +1,7 @@
 // Sumrize — Background Service Worker
-// Orchestrates Groq summarization, Unreal Speech TTS, and widget injection
+// Orchestrates LLM summarization, Deepgram TTS, and widget injection
 
-const UNREAL_SPEECH_URL = "https://api.v8.unrealspeech.com/stream";
+const DEEPGRAM_TTS_URL = "https://api.deepgram.com/v1/speak";
 
 const PROVIDERS = {
   groq: {
@@ -52,14 +52,14 @@ chrome.action.onClicked.addListener(async (tab) => {
 async function getApiKeys() {
   return new Promise((resolve) => {
     chrome.storage.sync.get(
-      ["llmProvider", "llmApiKey", "llmModel", "unrealSpeechApiKey", "selectedVoice", "groqApiKey"],
+      ["llmProvider", "llmApiKey", "llmModel", "deepgramApiKey", "selectedVoice", "groqApiKey"],
       (result) => {
         resolve({
           llmProvider: result.llmProvider || "groq",
           llmApiKey: result.llmApiKey || result.groqApiKey || "",
           llmModel: result.llmModel || "",
-          unrealSpeech: result.unrealSpeechApiKey || "",
-          selectedVoice: result.selectedVoice || "Autumn"
+          deepgram: result.deepgramApiKey || "",
+          selectedVoice: result.selectedVoice || "aura-2-thalia-en"
         });
       },
     );
@@ -156,11 +156,11 @@ The summary should:
   return extractText(data);
 }
 
-// ---- Text Chunking (Unreal Speech 1000-char limit for /stream) ----
+// ---- Text Chunking ----
 // First chunk is kept smaller (~400 chars) for faster initial playback
 function chunkText(text) {
   const FIRST_CHUNK_MAX = 400;
-  const REST_CHUNK_MAX = 950;
+  const REST_CHUNK_MAX = 1500;
   const sentences = text.match(/[^.!?]+[.!?]+[\s]*/g) || [text];
   const chunks = [];
   let current = "";
@@ -189,38 +189,33 @@ function chunkText(text) {
   return chunks;
 }
 
-// ---- Unreal Speech TTS (single chunk via /stream endpoint) ----
+// ---- Deepgram TTS (single chunk via REST endpoint) ----
 async function ttsOneChunk(text, voiceId) {
   const keys = await getApiKeys();
-  if (!keys.unrealSpeech) {
+  if (!keys.deepgram) {
     throw new Error(
-      "Unreal Speech API key not set. Go to extension options to add it.",
+      "Deepgram API key not set. Go to extension options to add it.",
     );
   }
 
-  const voice = voiceId || keys.selectedVoice || "Autumn";
+  const voice = voiceId || keys.selectedVoice || "aura-2-thalia-en";
+  const url = `${DEEPGRAM_TTS_URL}?model=${encodeURIComponent(voice)}&encoding=mp3`;
 
-  const response = await fetch(UNREAL_SPEECH_URL, {
+  const response = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${keys.unrealSpeech}`,
+      Authorization: `Token ${keys.deepgram}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      Text: text,
-      VoiceId: voice,
-      Bitrate: "192k",
-      Speed: 0,
-      Pitch: 1.0,
-      Codec: "libmp3lame",
-      Temperature: 0.25,
+      text: text,
     }),
   });
 
   if (!response.ok) {
     const errText = await response.text().catch(() => "");
     throw new Error(
-      `Unreal Speech error: ${response.status} - ${errText}`,
+      `Deepgram TTS error: ${response.status} - ${errText}`,
     );
   }
 
@@ -264,7 +259,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .then((keys) =>
         sendResponse({
           hasGroq: !!keys.llmApiKey,
-          hasTts: !!keys.unrealSpeech,
+          hasDeepgram: !!keys.deepgram,
         }),
       )
       .catch((err) => sendResponse({ error: err.message }));

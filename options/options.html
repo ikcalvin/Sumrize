@@ -69,14 +69,14 @@
       <div class="divider"></div>
 
       <div class="field">
-        <label for="unrealSpeechKey" class="field-label">
+        <label for="deepgramKey" class="field-label">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-          Unreal Speech API Key
+          Deepgram API Key
         </label>
-        <p class="field-desc">Get your key at <a href="https://unrealspeech.com" target="_blank" rel="noopener">unrealspeech.com</a></p>
+        <p class="field-desc">Get your key at <a href="https://console.deepgram.com" target="_blank" rel="noopener">console.deepgram.com</a></p>
         <div class="input-wrapper">
-          <input type="password" id="unrealSpeechKey" class="input" placeholder="Enter your Unreal Speech API key..." autocomplete="off" />
-          <button class="toggle-vis" data-target="unrealSpeechKey" title="Toggle visibility">
+          <input type="password" id="deepgramKey" class="input" placeholder="Enter your Deepgram API key..." autocomplete="off" />
+          <button class="toggle-vis" data-target="deepgramKey" title="Toggle visibility">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
@@ -87,23 +87,29 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
           Voice Selection
         </label>
-        <p class="field-desc">Choose the TTS voice used for audio playback.</p>
+        <p class="field-desc">Choose the Deepgram Aura voice used for audio playback.</p>
         <select id="voiceSelect" class="input" style="padding: 10px; border-radius: 8px;">
-          <optgroup label="Female">
-            <option value="Autumn">Autumn</option>
-            <option value="Melody">Melody</option>
-            <option value="Hannah">Hannah</option>
-            <option value="Emily">Emily</option>
-            <option value="Ivy">Ivy</option>
+          <optgroup label="Female Voices">
+            <option value="aura-2-thalia-en">Thalia — American</option>
+            <option value="aura-2-andromeda-en">Andromeda — American</option>
+            <option value="aura-2-athena-en">Athena — British</option>
+            <option value="aura-2-luna-en">Luna — American</option>
+            <option value="aura-2-stella-en">Stella — American</option>
+            <option value="aura-2-asteria-en">Asteria — American</option>
+            <option value="aura-2-aurora-en">Aurora — American</option>
+            <option value="aura-2-hera-en">Hera — American</option>
+            <option value="aura-2-iris-en">Iris — American</option>
+            <option value="aura-2-selene-en">Selene — American</option>
           </optgroup>
-          <optgroup label="Male">
-            <option value="Noah">Noah</option>
-            <option value="Jasper">Jasper</option>
-            <option value="Caleb">Caleb</option>
-            <option value="Ronan">Ronan</option>
-            <option value="Ethan">Ethan</option>
-            <option value="Daniel">Daniel</option>
-            <option value="Zane">Zane</option>
+          <optgroup label="Male Voices">
+            <option value="aura-2-arcas-en">Arcas — American</option>
+            <option value="aura-2-helios-en">Helios — American</option>
+            <option value="aura-2-orpheus-en">Orpheus — American</option>
+            <option value="aura-2-perseus-en">Perseus — American</option>
+            <option value="aura-2-zeus-en">Zeus — American</option>
+            <option value="aura-2-orion-en">Orion — American</option>
+            <option value="aura-2-apollo-en">Apollo — American</option>
+            <option value="aura-2-hermes-en">Hermes — American</option>
           </optgroup>
         </select>
       </div>
