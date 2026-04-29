@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const llmKey = document.getElementById("llmKey");
   const llmModel = document.getElementById("llmModel");
   const llmKeyDesc = document.getElementById("llmKeyDesc");
-  const unrealSpeechInput = document.getElementById("unrealSpeechKey");
+  const deepgramInput = document.getElementById("deepgramKey");
   const voiceSelect = document.getElementById("voiceSelect");
   const saveBtn = document.getElementById("saveBtn");
   const successMsg = document.getElementById("successMsg");
@@ -33,14 +33,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Load saved keys
   chrome.storage.sync.get(
-    ["llmProvider", "llmApiKey", "llmModel", "unrealSpeechApiKey", "selectedVoice"],
+    ["llmProvider", "llmApiKey", "llmModel", "deepgramApiKey", "selectedVoice"],
     (result) => {
       if (result.llmProvider) llmProvider.value = result.llmProvider;
       if (result.llmApiKey) llmKey.value = result.llmApiKey;
       if (result.llmModel) llmModel.value = result.llmModel;
-      if (result.unrealSpeechApiKey) unrealSpeechInput.value = result.unrealSpeechApiKey;
+      if (result.deepgramApiKey) deepgramInput.value = result.deepgramApiKey;
       if (result.selectedVoice) voiceSelect.value = result.selectedVoice;
-      
+
       updatePlaceholders();
     },
   );
@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
         llmProvider: llmProvider.value,
         llmApiKey: llmKey.value.trim(),
         llmModel: llmModel.value.trim(),
-        unrealSpeechApiKey: unrealSpeechInput.value.trim(),
+        deepgramApiKey: deepgramInput.value.trim(),
         selectedVoice: voiceSelect.value
       },
       () => {
